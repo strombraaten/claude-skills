@@ -17,13 +17,13 @@ This skill is a reusable Claude Code implementation of the workflow Stian descri
 
 ## Gallery UI
 
-![Direction 1 — compact list](docs/direction-1.png)
-![Direction 2 — bar-centered](docs/direction-2.png)
-![Direction 3 — card grid](docs/direction-3.png)
-![Direction 4 — dark premium](docs/direction-4.png)
-![Direction 5 — editorial](docs/direction-5.png)
-![Direction 6 — spreadsheet view](docs/direction-6.png)
-![Final synthesis direction](docs/direction-r4.png)
+![Direction 1 — compact list](docs/direction-1.webp)
+![Direction 2 — bar-centered](docs/direction-2.webp)
+![Direction 3 — card grid](docs/direction-3.webp)
+![Direction 4 — dark premium](docs/direction-4.webp)
+![Direction 5 — editorial](docs/direction-5.webp)
+![Direction 6 — spreadsheet view](docs/direction-6.webp)
+![Final synthesis direction](docs/direction-7.webp)
 
 **Keyboard shortcuts in the gallery:**
 - `←` / `→` — navigate between designs
