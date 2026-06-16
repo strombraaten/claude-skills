@@ -2,6 +2,12 @@
 
 Generate multiple distinct UI design directions and compare them side-by-side in an interactive gallery — instead of reacting to one mockup at a time.
 
+> "You stop nitpicking one mockup and start comparing directions. 'I want the warmth of this one but the layout of that one' is a much more useful thing to say than 'move the button left.'"
+>
+> — [Stian Håklev](https://www.linkedin.com/posts/stianhaklev_so-ive-been-building-various-side-projects-activity-7439679667344834560-pzIX), who originated this approach
+
+This skill is a reusable Claude Code implementation of the workflow Stian described: binary search for good designs using pure HTML rapid iteration with real app data, then converting the winning mockup to production code.
+
 ## How it works
 
 1. **Context gathering** — Claude reads your codebase (colors, fonts, data shapes) and asks what screen you're designing
@@ -50,6 +56,10 @@ Claude will ask a few questions, read your codebase, and generate the mockups. W
 ## Requirements
 
 - **Claude Preview MCP** — needed for the gallery viewer (`preview_start`). Without it, mockups are still generated and saved to `_design-exploration/` in your project root; you can open them manually in a browser.
+
+## Credits
+
+Originated by [Stian Håklev](https://www.linkedin.com/in/stianhaklev/) — see his [LinkedIn post](https://www.linkedin.com/posts/stianhaklev_so-ive-been-building-various-side-projects-activity-7439679667344834560-pzIX) for the original description and a video showing the workflow in action. This skill packages the same idea as a reusable, shareable Claude Code skill.
 
 ## Files generated
 
