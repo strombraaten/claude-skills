@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "pareto-analysis", "runs": [{"id": "eval-1-support-tickets-with_skill", "prompt": "SaaS company with 622 monthly support tickets across 7 categories, needs to pick 2 things to fix this quarter.", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Support Ticket Priority Analysis\n\n**Focus this quarter on two things: fix the reporting module user experience and stabilize API integration. These two issues alone are generating 63% of your support load (390 out of 622 tickets per month).**\n\n## Why these matter most\n\n**Reporting module confusion (210 tickets/month)**\nYour reporting module is the single biggest driver of support friction. Customers are getting stuck trying to use it, which suggests the interface or workflows aren't intuitive. This isn't about adding features \u2014 it's about making what exists work for your customers. Fixing this cuts your incoming ticket volume by one-third immediately. This is often the highest-leverage fix for overwhelmed support teams because a small UX improvement reaches everyone using the product.\n\n**API integration errors (180 tickets/month)**\nNearly 30% of your tickets are API-related failures. This could be confusing documentation, unclear error messages, rate limiting surprises, or integration gotchas that aren't obvious. API integration is critical for developers using your product \u2014 when this breaks, it blocks their entire workflow. Fixing these errors (clearer docs, better error messages, debugging tools) removes a massive source of friction and likely improves your developer experience across the board.\n\n## What to let go of (for now)\n\n- **Billing issues (85 tickets)**: Important, but not a crisis. Set up a simple troubleshooting guide or FAQ and revisit next quarter if volume doesn't drop.\n- **Feature requests (60 tickets)**: These aren't support problems \u2014 they're feedback. Route them to product, log them, and stop treating them as urgent tickets.\n- **Onboarding questions (45 tickets)**: Create a better onboarding checklist or video walkthrough. Lower-effort fix than building product features.\n- **Login/password issues (30 tickets)**: Standard IT friction. Add password reset self-service and account recovery docs.\n- **Slow performance (12 tickets)**: Monitor, but the small volume suggests it's not yet a core issue.\n\n## If you could only do one thing\n\nFix the reporting module first. It's your single point of highest leverage \u2014 one UX fix reaches the most customers and eliminates the most tickets fastest. Once that's quieter, move to API integration.\n\n## One important note\n\nBefore diving in, confirm your diagnosis. Run a few quick support chats to understand *why* the reporting module is confusing and *what* kinds of API errors customers hit most. Spending two hours understanding root cause could reveal an even faster fix than you expect. If customers are all hitting the same three issues, you may solve 80% of the problem with three small changes.\n"}], "grading": null}, {"id": "eval-1-support-tickets-without_skill", "prompt": "SaaS company with 622 monthly support tickets across 7 categories, needs to pick 2 things to fix this quarter.", "eval_id": 1, "outputs": [], "grading": null}, {"id": "eval-2-side-project-with_skill", "prompt": "Side project founder with 6 hrs/week and a 12-item to-do list feeling paralyzed.", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Pareto Analysis: Side Project Priorities\n\n## The Short Answer\n\nFix the payment bug first. Then cold email 20 customers to validate you're solving a real problem. Only after that\u2014redesign the landing page. Everything else waits.\n\nThese three things account for roughly 80% of what matters over the next month. The rest is distraction.\n\n## Why These Matter Most\n\n**Fix the payment bug (showstopper)**\nA bug that occasionally charges customers twice is actively losing you money and destroying trust. Every day this runs, you're accumulating angry customers and potential refund requests. This has to be first, no exceptions. Once it's fixed, you've removed the single biggest liability.\n\n**Cold email 20 customers (validation)**\nYou don't know yet if anyone actually wants what you're building. Before you redesign the landing page, improve responsiveness, or write blog posts, you need signal: *do real people care?* Sending 20 cold emails takes maybe 3\u20134 hours spread across a week, and the responses will tell you whether you're solving a real problem or polishing a toy. This feedback should inform every other decision you make.\n\n**Redesign the landing page (conversion)**\nYour landing page is the single funnel through which every prospect flows. A dated design signals \"this project is stale\" and kills conversion before anything else matters. Once you've talked to 20 people and know what message resonates, redesign it to reflect that. Mobile responsiveness should be built into this redesign rather than treated as a separate task.\n\n## What to Let Go of (For Now)\n\n- **Blog posts for SEO** \u2014 SEO takes months to compound. Pointless until you've validated demand and have a landing page worth ranking.\n- **Error logging** \u2014 Important, but not urgent. Add it after the payment bug is fixed and you know the product is worth scaling.\n- **Dark mode** \u2014 Nice-to-have. Won't move the needle on user acquisition or retention.\n- **Twitter/X account** \u2014 Premature. Build an audience once you have a validated product and a reason for people to follow.\n- **Documentation for the API** \u2014 Write this when you have paying customers, not before.\n- **Email list signup** \u2014 Add this as a small feature on your (new) landing page, but don't make it a separate project.\n- **Google Analytics** \u2014 Set up basic tracking, yes. But deep analytics analysis wastes time you don't have.\n- **Competitor pricing research** \u2014 Do this once you're close to pricing your product. Right now, focus on proving people want it.\n\n## The One Thing\n\nIf you could only do one thing this week, **fix the payment bug.** It's costing you money and trust, and it's the only thing on your list that gets worse the longer you ignore it. Dedicate 2\u20133 hours to finding and patching it. Then move to the customer outreach.\n\n## How to Spend Your 6 Hours This Week\n\n- **Hours 1\u20133**: Fix the payment bug. Narrow down where the double-charge happens, test it locally, and deploy a fix.\n- **Hours 4\u20136**: Write and send 5\u20137 cold emails. Not all 20 yet\u2014start with your warmest leads. Learn from the first responses before scaling.\n\nNext week, iterate. If people are replying and interested, invest in the landing page redesign. If they're not, pause and re-evaluate the product itself before doing any cosmetic work.\n\n---\n\n**Bottom line:** You're paralyzed because you're trying to do the 80% of work that drives 20% of results. Kill the payment bug, talk to customers, then design. Everything else follows from there.\n"}], "grading": null}, {"id": "eval-2-side-project-without_skill", "prompt": "Side project founder with 6 hrs/week and a 12-item to-do list feeling paralyzed.", "eval_id": 2, "outputs": [], "grading": null}, {"id": "eval-3-team-retro-with_skill", "prompt": "Engineering team with 12 recurring problems from 4 retros, needs to find the vital few root causes.", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Pareto Analysis: Team Retrospective Problems\n\n## The Short Answer\n\nThree root causes are driving most of your friction: **unclear ownership and communication across teams, slow code review and technical debt choking velocity, and process bloat eating your calendar.** The other nine items are mostly symptoms of these three. Fix these and you'll see the rest shrink on their own.\n\n---\n\n## Why These Matter Most\n\n### 1. Unclear ownership and communication gaps (\u2192 4+ downstream problems)\n\nThis is your biggest lever. When it's not clear who's responsible for what\u2014especially across frontend and backend\u2014you get cascading problems: requirements change mid-sprint because nobody's asking the right people before locking them in, on-call feels unfair because accountability lines are blurry, and team members end up duplicating work or stepping on each other.\n\nThe fix here isn't a perfect org chart. It's small: for each cross-team task, write down one owner before work starts. Review those ownership assignments in standup once a week. That one habit stops most of the downstream chaos.\n\n### 2. Slow code review (3-5 days) and technical debt (\u2192 2+ downstream problems, compounding)\n\nYou're shipping with low test coverage partly because reviews are glacially slow, and you're not fixing tech debt because new feature work is backed up. This is a vicious cycle: slow reviews \u2192 features stall \u2192 people take shortcuts \u2192 more tech debt \u2192 reviews get slower because the code is messier.\n\nStart here: **reduce code review SLA to 24 hours.** That one change unblocks feature work, lets you actually deploy things, and makes it easier to chip away at tech debt. You don't need to eliminate bugs overnight\u2014you need to move faster so you can see patterns and fix them. Low test coverage is real, but you can't fix it while you're drowning in work-in-progress.\n\n### 3. Meetings and sprint planning eating time (\u2192 2 problems directly)\n\nMeetings run long and planning takes forever for the same reason: unclear goals and scope. Every time someone says \"wait, who's doing this?\" or \"what exactly are we building here?\" you add 15 minutes. You're not in meetings too much\u2014you're in *unclear* meetings.\n\nThe fix: timebox ruthlessly. Sprint planning gets 2 hours max, regardless. Recurring meetings have a 30-minute default unless explicitly justified. If a meeting can be a 5-minute async update, make it one. This sounds mechanical, but it forces clarity and kills a ton of low-value discussion.\n\n---\n\n## What to Let Go of (for now)\n\n- **Nobody reads the documentation** \u2014 This is a symptom of unclear ownership and poor onboarding process, not a cause. Fix communication and ownership first; docs will matter more once people know who to ask.\n- **New teammates take months to feel productive** \u2014 Same root cause: no clear ownership model or onboarding checklist. It's hard to ramp up in an organization where nobody knows who owns what. Fix ownership and this gets faster.\n- **We don't celebrate wins** \u2014 Real and important for morale, but it's not blocking velocity. Come back to this once the three root causes are under control.\n- **On-call rotation feels unfair** \u2014 This is a symptom of unclear ownership. Once you define clear roles, on-call fairness becomes obvious.\n\n---\n\n## The One Thing\n\nIf you could only do one thing this week: **define ownership for cross-team tasks and commit to a 24-hour code review SLA.** These two moves stop the two biggest bleeding wounds\u2014miscommunication and blocked work. Everything else gets easier once these are in place.\n\n---\n\n## How to Start This Week\n\n1. **Ownership model**: In your next standup, pick 3 active cross-team tasks and assign a single owner to each. Write it down. Do this every week for a month. You'll quickly see the pattern for what should belong to whom.\n\n2. **Code review SLA**: Tell the team: code reviews get a response within 24 hours, no exceptions. If someone's underwater, loosen their review responsibilities temporarily\u2014don't break the SLA. This one rule unblocks more than you think.\n\n3. **Meeting timeboxes**: Cut sprint planning to 2 hours next sprint. If it runs over, move the overflow to async. You'll be shocked how much was ceremony.\n\nStart there. The three root causes will start shrinking within two sprints.\n"}], "grading": null}, {"id": "eval-3-team-retro-without_skill", "prompt": "Engineering team with 12 recurring problems from 4 retros, needs to find the vital few root causes.", "eval_id": 3, "outputs": [], "grading": null}], "previous_feedback": {}, "previous_outputs": {"eval-1-support-tickets-with_skill": [{"name": "response.md", "type": "text", "content": "# Pareto Analysis: SaaS Support Ticket Prioritization\n\n## The Situation\nYour support team is handling 622 tickets per month across 7 categories. With bandwidth to fix only 2 things this quarter, the question is clear: where will those fixes have the most impact?\n\n---\n\n## The Vital Few (the 20%)\n\n### 1. **Feature Confusion on Reporting Module** (210 tickets/month, 34% of total)\n**Why it matters most:** This single issue generates more than one-third of all support tickets. Customers are stuck on a core feature\u2014this isn't peripheral. Fixing clarity, usability, or documentation for the reporting module will immediately reduce your busiest category.\n\n**Action:** Prioritize a UX/clarity fix on the reporting module. This could mean improving the UI, adding in-app guidance, creating video tutorials, or restructuring the feature's navigation. The payoff is enormous\u2014even a 30% reduction here saves ~63 tickets per month.\n\n### 2. **API Integration Errors** (180 tickets/month, 29% of total)\n**Why it matters most:** Your second-biggest driver, and likely a source of friction for power users and integrations. API errors often indicate unclear documentation, missing error messages, or a brittle integration experience. Fixing this removes a major pain point for developers using your product.\n\n**Action:** Audit and improve your API error handling and documentation. Better error messages, clearer docs, and fixing common integration failure modes will have outsized impact. This is also the kind of work that scales\u2014fix it once, help hundreds of future integrations.\n\n---\n\n## The Trivial Many (the 80%)\n\nThese don't need to be ignored, but they shouldn't consume your two quarterly fixes:\n\n- **Billing issues (85 tickets):** Consider a better self-service billing portal or FAQ instead of a code change. Lower leverage for engineering.\n- **Feature requests logged as tickets (60 tickets):** These are roadmap signals, not defects. Handle them with a feedback mechanism, not a rushed build.\n- **Onboarding questions (45 tickets):** Better onboarding documentation or a help flow addresses this without heavy engineering. Ops/support can own this.\n- **Login/password issues (30 tickets):** Likely user error or forgotten credentials. A better password reset UX or SSO option helps, but it's relatively straightforward.\n- **Slow performance (12 tickets):** Real issue, but small volume. Fix it after the bigger wins or investigate whether performance problems are concentrated in the reporting module (which would roll into priority #1).\n\n---\n\n## The One Thing (if you had to pick one)\n\nIf you could only fix one thing this quarter: **Fix the reporting module.** It's generating more tickets than the next two categories combined, and it's a core feature. A well-designed, well-explained reporting experience will dramatically shift your support burden and likely improve retention and upsell.\n\n---\n\n## Why This Matters\n\nYour top 2 priorities (**reporting module + API integration**) account for **390 of your 622 monthly tickets (63%)**.\n\nFixing both would immediately eliminate ~60% of your support load. Your team would go from drowning to breathing.\n\n---\n\n## A Note on the Numbers\n\nThe impact assumes fixes actually solve the root problem (not just symptoms). Before diving in:\n- **For reporting:** Talk to 2-3 customers who filed tickets. Is it a UX issue? Confusing docs? Wrong expectations? The fix depends on the root cause.\n- **For API:** Check which integrations or error scenarios generate the most tickets. Prioritize the top 3-5 failure modes rather than a complete rewrite.\n\nThis will make your fixes even sharper and ensure you're not spending effort on edge cases.\n\n---\n\n## Action Plan\n\n**This quarter:** Commit to the reporting module UX + API error handling/docs improvements.\n\n**Everything else:** Either stays on the backlog, gets handled by support/ops (better docs, FAQs, automation), or gets deferred to next quarter.\n\nYou'll likely see ticket volume drop 40-50% within a month of deployment. That's the Pareto payoff.\n"}], "eval-1-support-tickets-without_skill": [{"name": "response.md", "type": "text", "content": "# Support Ticket Analysis & Prioritization Recommendation\n\n## Executive Summary\nWith 622 total tickets per month and the ability to fix only 2 issues this quarter, your company should focus on:\n1. **Feature confusion on the reporting module** (210 tickets/month)\n2. **API integration errors** (180 tickets/month)\n\nThese two issues account for **62.7% of all tickets** and represent the highest-impact opportunities for your support team.\n\n---\n\n## Data Analysis\n\n### Ticket Volume Breakdown\n| Category | Monthly Tickets | % of Total | Cumulative % |\n|----------|-----------------|-----------|--------------|\n| Feature confusion (reporting) | 210 | 33.8% | 33.8% |\n| API integration errors | 180 | 28.9% | 62.7% |\n| Billing issues | 85 | 13.7% | 76.4% |\n| Feature requests | 60 | 9.6% | 86.0% |\n| Onboarding questions | 45 | 7.2% | 93.2% |\n| Login/password issues | 30 | 4.8% | 98.0% |\n| Slow performance complaints | 12 | 1.9% | 100.0% |\n| **TOTAL** | **622** | **100%** | |\n\n### Pareto Principle Application\nThis data clearly follows the Pareto principle:\n- **Top 2 issues = 62.7% of tickets**\n- **Remaining 5 issues = 37.3% of tickets**\n\n---\n\n## Detailed Analysis of Top 2 Priorities\n\n### 1. Feature Confusion on Reporting Module (210 tickets/month)\n\n**Why it's the top priority:**\n- Highest single ticket category by volume\n- Directly impacts core product value (reporting is typically a key SaaS feature)\n- Customer frustration with key functionality reduces retention and expansion revenue\n- Likely indicates UX/documentation gaps\n\n**Recommended solutions:**\n- Audit the reporting module UX for clarity and intuitiveness\n- Create/expand in-app contextual help and tooltips\n- Develop comprehensive video tutorials and documentation\n- Consider hiring or reallocating product designer to improve interface clarity\n- Implement a guided onboarding flow specifically for the reporting module\n\n**Expected impact:** Could reduce these tickets by 40-60% if implemented well\n\n---\n\n### 2. API Integration Errors (180 tickets/month)\n\n**Why it's the second priority:**\n- Second-highest volume category\n- Technical issues indicate potential product quality problems\n- Impacts your most sophisticated/advanced customers (developers/integrators)\n- Customers struggling with API likely have higher LTV but also higher churn risk\n- Could indicate documentation gaps or actual bugs\n\n**Recommended solutions:**\n- Conduct code review of API for common error patterns\n- Expand API documentation with detailed error code explanations\n- Create sandbox/testing environment for safer API exploration\n- Build better error messages that guide users to solutions\n- Consider creating API troubleshooting guide or runbook\n- Establish API monitoring to catch issues proactively\n\n**Expected impact:** Could reduce these tickets by 35-50% if bugs are addressed\n\n---\n\n## Why NOT These Other Categories\n\n### Billing Issues (85 tickets/month - 13.7%)\nWhile significant, billing issues often self-resolve or require manual intervention anyway. However, if patterns exist, fixing the #2 item first gives you momentum and team capacity.\n\n### Feature Requests (60 tickets/month - 9.6%)\nThese shouldn't be in the support queue\u2014they should go to product management. Create a mechanism to route these to a product feedback system instead.\n\n### Onboarding Questions (45 tickets/month - 7.2%)\nWhile important for retention, this is better addressed through improved onboarding flow rather than reactive support tickets. Could be handled through:\n- Better initial setup wizard\n- Welcome emails with links to resources\n- In-app tours and tooltips\n\n### Login/Password Issues (30 tickets/month - 4.8%)\nThese are typically low-effort for support and indicate users who haven't set up password managers or authentication. Consider implementing:\n- Passwordless login options\n- SSO integration\n- Better password reset flow\n\n### Slow Performance (12 tickets/month - 1.9%)\nSmall volume. Investigate if it's infrastructure-related (requires investment) or if it's actually about feature misunderstanding (relates back to #1).\n\n---\n\n## Implementation Roadmap for Q2/Q3\n\n### Priority 1: Fix Reporting Module (6-8 weeks)\n- Week 1-2: UX audit and identify pain points\n- Week 2-3: Design improvements and documentation gaps\n- Week 3-6: Implement UX fixes, create video tutorials, improve help text\n- Week 6-8: Testing and rollout, monitor ticket reduction\n\n### Priority 2: Fix API Integration (6-8 weeks, can overlap with Priority 1)\n- Week 1-2: Analyze common error patterns in support tickets\n- Week 2-4: Update API documentation and error messages\n- Week 4-6: Fix identified bugs, create troubleshooting guides\n- Week 6-8: Deploy, monitor, iterate\n\n---\n\n## Expected Impact\n\n**Conservative estimate (40% reduction on top 2 categories):**\n- Reporting module: 210 \u2192 126 (84 ticket reduction)\n- API errors: 180 \u2192 108 (72 ticket reduction)\n- **Total monthly reduction: 156 tickets (25% of total workload)**\n\n**Optimistic estimate (50% reduction on top 2 categories):**\n- Reporting module: 210 \u2192 105 (105 ticket reduction)\n- API errors: 180 \u2192 90 (90 ticket reduction)\n- **Total monthly reduction: 195 tickets (31% of total workload)**\n\nThis would bring your monthly ticket volume from 622 to 427-467, a dramatic improvement in support team capacity.\n\n---\n\n## Additional Recommendations\n\n1. **Create a ticket categorization system** if you don't have one, to make future analysis easier\n2. **Route feature requests differently** \u2014 they shouldn't consume support bandwidth\n3. **Implement proactive monitoring** for API errors and reporting performance\n4. **Build a knowledge base** prioritizing the most common questions\n5. **Consider self-service tools** for billing questions (invoice lookup, payment methods, usage dashboard)\n6. **Set up early warning system** for churn risk based on support ticket patterns\n\n---\n\n## Conclusion\n\nFocus your Q2 development efforts on the reporting module and API integration. These two areas will have the most dramatic impact on your support team's capacity and your customers' experience. With 150 customers and 622 monthly tickets, you're at ~4 tickets per customer per month\u2014addressing these top two issues could bring that down to 3 tickets per customer, creating breathing room for your team while improving customer satisfaction.\n"}], "eval-2-side-project-with_skill": [{"name": "response.md", "type": "text", "content": "# Pareto Analysis: Your Side Project Priority Crisis\n\n## The Situation\n\nYou have 6 hours a week, 12 tasks, and a feeling of paralysis. That's the classic Pareto moment: too many inputs, unclear which ones actually move the needle.\n\nThe fundamental question isn't \"Should I do this task?\" It's \"Which task, if done, unblocks or validates the most other work?\"\n\n---\n\n## The Vital Few (20%)\n\nFocus relentlessly on these three. Do nothing else until these are handled.\n\n### 1. **Fix the payment flow bug (item 6: double-charging bug)**\n\n**Why it matters most:** This is not a nice-to-have; it's a showstopper. A payment bug erodes customer trust instantly and creates refund/legal liability. You cannot build a business on a broken payment system.\n\n**Concrete action:** Debug and patch this immediately. Allocate 2\u20133 of your 6 weekly hours to this. If you can't fix it yourself in a week, you may need to temporarily disable payments until you do, or block this from any customer interaction.\n\n**Impact:** Removes a critical blocker on revenue and customer trust. Everything downstream depends on this working.\n\n---\n\n### 2. **Cold email 20 potential customers for feedback (item 4)**\n\n**Why it matters most:** This is your only direct contact with reality. Every other task on your list assumes something about what customers want. Cold emails give you signal: Do people care? What's broken? What's the actual ask?\n\nRight now you're building in a vacuum. These 20 conversations are worth more than a redesigned landing page, blog posts, or dark mode.\n\n**Concrete action:** Write a simple cold email template (< 5 min) and send it to 20 people this week. Aim for specificity: \"I built a tool that helps with X. Would you have 15 minutes to tell me if this solves a real problem for you?\" You're not selling; you're learning.\n\n**Impact:** You'll get feedback that makes *everything else* either clearer or unnecessary. You might learn that mobile responsiveness matters, or that it doesn't. You might discover a new bug no one told you about.\n\n---\n\n### 3. **Set up proper error logging (item 3)**\n\n**Why it matters most:** You're flying blind without visibility into what's actually breaking. Right now, you probably discover bugs by accident or hear about them days late. Error logging turns your users into your QA team.\n\n**Concrete action:** Pick a simple error logging service (Sentry is free tier; LogRocket is another option). Wire it up in 1\u20132 hours. You'll know instantly when something breaks.\n\n**Impact:** Multiplies the value of customer feedback. Errors surface the real priorities, not the imagined ones. Combined with cold emails, you get customer feedback + system feedback in one loop.\n\n---\n\n## The Compounding Insight\n\nItems 2 and 3 form a feedback engine: **Customers \u2192 Errors \u2192 Learning \u2192 Prioritization.** Fix the bug, enable customers to try it, catch what breaks, and let that shape your next move. This is the tightest feedback loop you can build with 6 hours a week.\n\n---\n\n## The Trivial Many (80%)\n\n**Deprioritize (or drop) these for now:**\n\n- **Redesign the landing page (item 1):** You don't yet know what the landing page needs to communicate. Talk to 20 people first; then you'll know.\n- **Write 3 blog posts (item 2):** SEO is a long game. It doesn't drive early traction for a side project.\n- **Dark mode (item 5):** Nice-to-have. Zero users are asking for this yet.\n- **Create a Twitter/X account (item 7):** Broadcasting without a user base or story to tell feels like shouting into the void. Wait until you have something surprising to share.\n- **Improve mobile responsiveness (item 8):** You might not need it. 20 customer conversations will tell you if this is real.\n- **Set up an email list signup (item 9):** Pointless without traffic or a reason to sign up. Do this after you've validated the product.\n- **Write API documentation (item 10):** Only relevant if people are actually using the API. Premature.\n- **Add Google Analytics (item 11):** You won't have traffic yet. Simple logging (errors + how many people tried it) is enough.\n- **Research competitor pricing (item 12):** Interesting later; irrelevant now. Focus on whether you solve a problem first.\n\n**Why they're lower-leverage:** They all assume product-market fit. You're pre-PMF. They're optimizations in a vacuum.\n\n---\n\n## The One Thing\n\n**If you could only do one thing, it would be:** Cold email 20 potential customers and listen to their answers.\n\nHere's why: It forces you to clarify what you're actually solving, it generates the signal that de-risks every other decision, and it takes only a few hours. Everything after that\u2014the bug fix, error logging, landing page\u2014flows from what you learn.\n\nYou feel paralyzed because you're treating a pre-product-market-fit side project like a mature SaaS. You're not. Your job right now isn't to build a polished product; it's to learn whether the product matters at all.\n\n---\n\n## Your Next Move\n\nThis week:\n1. **Fix the payment bug.** (2\u20133 hours)\n2. **Set up error logging.** (1\u20132 hours)\n3. **Send 20 cold emails.** (1 hour)\n\nThat's 4\u20136 hours. You're done. Anything else is noise.\n\nNext week, read the replies. Let that conversation shape your priorities. The list will look completely different.\n\nYou're not paralyzed. You're just been looking at the wrong thing. Now you know what to focus on.\n"}], "eval-2-side-project-without_skill": [{"name": "response.md", "type": "text", "content": "# Side Project Prioritization: Breaking the Paralysis\n\nYou're experiencing classic analysis paralysis from trying to do everything at once. With only 6 hours/week, you need ruthless prioritization. Let me help you focus on what actually moves the needle.\n\n## The Core Problem\n\nYou have 12 tasks covering: product (5), marketing (4), infrastructure (3), and bug fixes (1). At 6 hours/week, you can't do even 2-3 tasks properly. The solution is to apply the Pareto Principle: focus on the 20% of activities that drive 80% of results.\n\n## The Real Question: What's Your Actual Goal?\n\nBefore I give you the answer, clarify this first:\n- **Goal A:** Get real customer feedback and validate demand for your product?\n- **Goal B:** Grow revenue from this side project?\n- **Goal C:** Build something you're proud of technically?\n\nThis matters because it changes priorities. I'll assume **Goal A** (customer validation) since you're early-stage with a side project, but adjust if different.\n\n---\n\n## What To Ignore (For Now)\n\nThese tasks seem important but actually steal time without moving the needle when you're early:\n\n**Completely deprioritize:**\n- Twitter/X account and posting (marketing without product-market fit is wasted effort)\n- Blog posts for SEO (requires consistent output, takes weeks to matter, traffic arrives too slow)\n- Google Analytics (you don't have enough traffic to measure yet)\n- Competitor pricing research (useful once you have customers asking)\n- Landing page redesign (your dated landing page still converts; better messaging > prettier design)\n- Documentation for the API (write it after you have 3+ customers using it)\n- Dark mode option (nice-to-have feature; zero revenue impact)\n- Mobile responsiveness improvements (optimize after you know who your customer is)\n\n**Reason:** These feel productive but don't answer the fundamental question: \"Do people actually want this?\" They're also infinite tasks that expand to fill all available time.\n\n---\n\n## What Actually Matters (Priority Order)\n\n### TIER 1: DO THIS FIRST (Weeks 1-2)\n\n#### 1. Fix the payment flow bug [3-4 hours]\n**Why:** A bug that charges customers twice is a trust-killer and potential legal liability. If you have even 10 customers, this costs you more than you think (refunds, support time, churn).\n\n**Action:**\n- Reproduce the bug consistently\n- Identify the root cause (race condition? webhook handling? stripe integration?)\n- Fix it\n- Test with test transactions thoroughly\n- Deploy\n\n**Impact:** Removes friction from your most important transaction. One customer lost to a bad experience = loss of feedback + word-of-mouth damage.\n\n---\n\n#### 2. Cold email 20 potential customers [2-3 hours]\n**Why:** This is your fastest path to 3-5 real conversations. Every conversation teaches you more than any feature.\n\n**Action:**\n- Identify 20 target customers (go to competitor reviews on G2/ProductHunt, find people complaining)\n- Write a simple 3-sentence email: \"Hi [name], I noticed you commented about [problem]. We're building a solution. Would you have 15 minutes to chat?\"\n- Track who responds (even one 15-min call = gold)\n- Don't pitch. Ask questions: \"What's your biggest frustration?\" \"How much would you pay?\" \"Who else deals with this?\"\n\n**Impact:** Real customer feedback > 100 hours of guessing. One customer might tell you to scrap 5 features and build something different.\n\n---\n\n#### 3. Set up proper error logging [2-3 hours]\n**Why:** If your product has bugs (and it does\u2014the payment bug proves it), you're flying blind. Without error logging, you don't know what's breaking for users.\n\n**Action:**\n- Use a free/cheap tool: Sentry, LogRocket, or simple Datadog (has free tier)\n- Set it up in 30 minutes\n- Now when customers have issues, you'll see them immediately instead of learning via angry support emails\n\n**Impact:** Prevents you from shipping broken features. Tells you exactly where to focus fixes.\n\n---\n\n### TIER 2: DO THIS NEXT (Weeks 3-4)\n\n#### 4. Improve mobile responsiveness [4-5 hours]\n**Why:** Once you have 5+ customer conversations, you'll learn what they actually use. If they're on mobile, this matters. If not, skip it.\n\n**But:** If your current site is broken on mobile, fix this now. If it's just \"not pretty,\" deprioritize.\n\n---\n\n#### 5. Set up an email list signup [2-3 hours]\n**Why:** Only do this after Tier 1. Then: add a simple email form + connect to ConvertKit/Substack free plan.\n\n**Not for:** Email marketing campaigns (too early)\n**For:** Capturing anyone interested enough to follow up, plus you'll have emails of people to survey later\n\n---\n\n## The 6-Hour Weekly Schedule\n\nHere's exactly how to use your time:\n\n**Weeks 1-2 (12 hours total):**\n- Week 1: Fix payment bug (3-4 hrs) + Start cold email outreach (2 hrs, reaching 7-8 people) + Error logging setup (1-2 hrs)\n- Week 2: Finish cold emails (2-3 hrs reaching remaining 12-15 people) + Do customer calls (2-3 hrs) + Brief notes on feedback (1 hr)\n\n**Weeks 3-4 (12 hours total):**\n- Week 3: Implement 1-2 critical features customers mentioned (3-4 hrs) + Mobile fix if needed (2-3 hrs) + Customer support/calls (1-2 hrs)\n- Week 4: Deploy changes + Email signup (2-3 hrs) + More customer conversations (2-3 hrs)\n\n---\n\n## After You Hit These Milestones\n\n**Only when you have 10+ customers:**\n- Landing page redesign (now you know what message resonates)\n- Blog posts (now you have case studies + stories)\n- Competitor analysis (now you know your positioning)\n- Dark mode, advanced features (now you can charge for it)\n\n**Only when revenue > $0:**\n- Twitter/X growth (maybe)\n- Paid ads (maybe)\n- Full API documentation (maybe)\n\n---\n\n## Why This Works\n\n1. **Payment bug fix** = removes the one thing definitely hurting you\n2. **Customer outreach** = answers \"Is there demand?\" faster than any feature\n3. **Error logging** = gives you a dashboard of what's actually broken\n4. **Everything else** = information about what matters comes from customers, not guessing\n\nYou're probably building the wrong thing. Not because you're dumb\u2014because you haven't talked to 10 real people yet. The bug, the emails, and the logging are your path to those conversations.\n\n---\n\n## The Mental Reset\n\nStop thinking \"I need to do all 12 things.\"\n\nStart thinking \"What's ONE thing I can do this week that gives me real feedback on whether this matters?\"\n\n- Week 1: \"Fix bug + send 10 emails\"\n- Week 2: \"Get 3-4 people to say 'yes, I have this problem'\"\n- Week 3: \"Learn what matters most to them\"\n- Week 4: \"Build the one thing they'll actually pay for\"\n\nBy Week 4, your to-do list will be completely different. That's the goal.\n\n---\n\n## Red Flags to Watch\n\n- If 0 of 20 people respond to your emails: your target customer is wrong OR your problem isn't painful enough\n- If customers respond but don't care about the payment bug: deprioritize further bug fixes, ask what they DO care about\n- If 3+ customers mention the same missing feature: that's your next project\n\nYou're not paralyzed because there's too much to do. You're paralyzed because you don't know what matters. These 5 steps are your shortcut to clarity.\n\n---\n\n## Summary: Your Next 48 Hours\n\n1. Deploy error logging (2 hrs)\n2. Fix the payment bug (3-4 hrs, do this now because it's concrete)\n3. Make a list of 20 target customers\n4. Write a 3-sentence cold email template\n5. Send the first 5 emails and see what happens\n\nThat's it. Everything else is noise until you get feedback.\n"}], "eval-3-team-retro-with_skill": [{"name": "response.md", "type": "text", "content": "# 80-20 Analysis: Team Retrospective Problems\n\n## Executive Summary\n\nYou listed 12 problems from your last 4 retros. After analyzing them for root causes and compounding effects, the vital few that are *actually driving* your team friction are **communication breakdowns, code review bottlenecks, and technical debt**. The other 9 problems are mostly symptoms of these three.\n\nFixing the vital few won't solve everything overnight, but it will unblock 80% of your pain.\n\n---\n\n## The Vital Few (20%)\n\n### 1. **Communication gaps and unclear ownership**\n*This is the root cause \u2014 everything else cascades from here.*\n\n**Why it matters most:**\n- Slow code reviews happen partly because reviewers don't understand context (communication gap) and don't know who owns what decision (unclear ownership)\n- Requirements change mid-sprint because frontend and backend teams aren't aligned on what success looks like\n- New teammates take months to ramp up because tribal knowledge lives in heads, not documented or shared\n- Cross-team task ownership stays murky because nobody knows who's responsible\n\n**Concrete action:**\n- Establish a \"single source of truth\" for architecture decisions and ownership (could be a simple doc: \"who owns authentication? Who owns the API contract?\")\n- Schedule synchronous design reviews *before* code review \u2014 frontend and backend engineers sync on requirements and design before anyone writes code\n- For cross-team tasks: assign a single \"owner\" visibly (in ticket, sprint board, or RACI matrix); they don't do all the work, but they're the connective tissue\n- Create \"decision logs\" so new teammates don't have to reverse-engineer why things are the way they are\n\n---\n\n### 2. **Code review turnaround bottleneck**\n*3\u20135 day average is a productivity killer and a quality trap.*\n\n**Why it matters most:**\n- At 3\u20135 days per review, a feature with 2 rounds of feedback takes 10+ days just waiting \u2014 this tanks velocity\n- Long wait times pressure developers to bundle larger changes (and larger changes = harder reviews = slower reviews = vicious cycle)\n- Slow reviews mean reviewers are deep in their own context when they finally look at code; they miss things \u2192 bugs ship\n- This one thing probably explains 30% of your \"meetings run too long\" (because people are behind on features, more time spent re-planning)\n\n**Concrete action:**\n- Set a team SLA: code review response within 24 hours (not 3\u20135 days). This is achievable and game-changing\n- If you don't have the bandwidth for 24-hour reviews, you have a staffing problem or too many PRs open at once \u2014 address that directly\n- Implement async code review \"shifts\" (e.g., two people every day own reviews; they block personal feature work for that day)\n- Create a \"PR waiting too long\" alert in your workflow so it doesn't slip\n\n---\n\n### 3. **Technical debt compounding with low test coverage**\n*These two feed each other \u2014 debt makes testing hard; low coverage makes debt worse.*\n\n**Why it matters most:**\n- Complex, fragile code (debt) means reviewers have to be extra careful \u2192 slower reviews\n- When tests are sparse, reviewers can't be confident in changes \u2192 more scrutiny \u2192 slower reviews\n- Risky, untested code gets to production \u2192 bugs shipped \u2192 team loses confidence \u2192 demands more review scrutiny \u2192 slower reviews\n- This also explains why new teammates take so long: the codebase is hard to navigate and poorly tested\n\n**Concrete action:**\n- Pick ONE module or service that's causing the most pain (high bugs, slow reviews, hard to change). Allocate 1\u20132 people for 2\u20133 sprints to: add tests and refactor debt in that area\n- Once you have one \"clean\" section, new teammates can learn there first; it becomes a reference point\n- Don't try to fix everything \u2014 this compounds the problem. Focus on the highest-traffic, highest-pain area\n- Make test coverage part of code review: \"Is this feature tested?\" becomes a blocking question\n\n---\n\n## The Trivial Many (80%) \u2014 Deprioritize These (For Now)\n\n- **Meetings run too long** \u2014 symptom of poor planning input and being behind on features. Fix the items above and this resolves\n- **Requirements change mid-sprint too often** \u2014 this is upstream communication/design sync; handled by vital #1\n- **Sprint planning takes forever** \u2014 unstable requirements (vital #1) make planning hard. Better requirements = faster planning\n- **Slow onboarding / new teammates take months to ramp** \u2014 caused by communication gaps (vital #1) and complex codebase (vital #3). Fix those, this improves\n- **On-call rotation feels unfair** \u2014 likely a symptom of uneven work distribution or unclear ownership (vital #1). Once you fix ownership, you can fairly balance on-call\n- **Nobody reads the documentation we write** \u2014 documentation isn't the problem; it's that people don't know it exists (communication problem, vital #1) or the code is too complex to benefit from docs (debt, vital #3)\n- **We don't celebrate wins enough** \u2014 morale issue. It's the lowest-leverage problem on the list. Fix the other stuff, and momentum creates celebration naturally\n- **Test coverage is low** \u2014 this is bundled with vital #3 above\n\n---\n\n## The One Thing\n\n**If you could only do one thing: establish clarity on who owns what (communication/ownership) and enforce a 24-hour code review SLA.**\n\nThese two actions unblock everything downstream. Better communication prevents requirement thrash, unclear ownership, and onboarding pain. Fast reviews unblock velocity and let the team breathe.\n\nStart there for 4 weeks, measure it, and then tackle technical debt in a focused area.\n\n---\n\n## Caveats\n\n- This analysis is based on the patterns in your list, not on metrics (e.g., time-per-activity, defect root cause analysis, etc.). If you have data suggesting a different problem is the actual blocker, I'd revise this\n- The \"vital few\" are interconnected \u2014 you likely need to tackle all three together, not sequentially. But they're still the only three worth your focus\n- I'm assuming your team is roughly 5\u201315 people. If you're much larger or smaller, the dynamics might shift\n"}], "eval-3-team-retro-without_skill": [{"name": "response.md", "type": "text", "content": "# Pareto Analysis: Team Retrospective Issues (80/20 Focus)\n\n## Executive Summary\nFrom your 12 identified issues, I've identified **3 root causes** that likely drive roughly 80% of your problems. Fixing these will unlock progress on the others without directly addressing each individually.\n\n---\n\n## The 80/20 Breakdown\n\n### TIER 1: The Three Critical Issues (Priority Focus)\nThese three issues are interconnected and create cascading problems throughout your team:\n\n#### 1. **Unclear Ownership on Cross-Team Tasks** (Highest Impact)\n- **Why it matters**: This is a multiplier problem\n  - Directly causes: communication gaps between frontend/backend, slow code review turnaround (unclear who should review), slow sprint planning (debating who owns what)\n  - Indirectly causes: low test coverage (unclear who tests what), technical debt (unclear who fixes what), unfair on-call rotation (unclear responsibilities)\n  - Creates meetings that run long (decision-making meetings about ownership)\n\n- **Immediate win actions**:\n  - Define explicit RACI matrix for 5-10 most common task types (API changes, database migrations, deployments, etc.)\n  - In sprint planning, write owner names next to cross-team tasks BEFORE discussing estimation\n  - Quick 30-min RACI workshop (not a lengthy process)\n\n---\n\n#### 2. **Requirements Change Mid-Sprint Too Often** (Highest Leverage)\n- **Why it matters**: This destabilizes everything else\n  - Directly causes: slow code review turnaround (reviewers don't know final requirements), low test coverage (scope keeps shifting), technical debt (quick hacks for moving targets), meetings run too long (re-planning mid-sprint)\n  - Indirectly causes: new teammates take months to feel productive (inconsistent requirements = harder to onboard), communication gaps (unclear goals = no alignment)\n\n- **Immediate win actions**:\n  - Implement a \"requirement freeze\" rule: no mid-sprint requirement changes except P0 bugs\n  - Create a triage process for mid-sprint requests: log them, schedule for next sprint planning\n  - Have product owner review requirements during sprint planning using a checklist (takes 10 mins)\n  - This one change likely reduces 5-6 other issues\n\n---\n\n#### 3. **Low Test Coverage + Shipping Bugs** (Foundation Issue)\n- **Why it matters**: This is the technical foundation of your problems\n  - Creates: slow code review turnaround (reviewers have to be extra careful without tests), technical debt (no safety net to refactor), new teammates struggling (tests are documentation)\n  - Blocks: confident refactoring, fast feature work, reliable deployments\n\n- **Immediate win actions**:\n  - Don't aim for 100% coverage. Target 70% for critical paths (database logic, APIs, auth, payment flows if applicable)\n  - Establish a rule: no code review approval without tests for changed code (enforce in PR template)\n  - Create a \"test writing\" checklist item in your sprint tasks (5-10 min per task)\n  - Consider pair programming on tricky logic to write tests together\n\n---\n\n## Secondary Issues (20%) - These Resolve Naturally\nIf you fix the three above, these will improve significantly without separate action:\n\n| Issue | Why It Improves | Root Cause Address |\n|-------|-----------------|-------------------|\n| Communication gaps (frontend/backend) | Clear ownership \u2192 clear communication | Tier 1 #1 |\n| Slow code review turnaround | Clear requirements + tests = faster review | Tier 1 #2 & #3 |\n| Technical debt slowing features | Requirements stability + test coverage | Tier 1 #2 & #3 |\n| New teammates slow to ramp | Clearer processes + consistent requirements | Tier 1 #1 & #2 |\n| On-call rotation unfairness | Clear ownership of services | Tier 1 #1 |\n| Sprint planning takes forever | Clear ownership + frozen requirements | Tier 1 #1 & #2 |\n\n---\n\n## Remaining Issues (Less Impactful, But Still Fixable)\n\n### Meetings Run Too Long\n- **Root cause**: Often a symptom of unclear ownership, unclear requirements, or needing tests\n- **Fix if persists**:\n  - Time-box sprint planning to 2 hours max (use the RACI matrix to eliminate ownership debates)\n  - Retro format: 30-45 min, strict time limits per section\n\n### Nobody Reads Documentation\n- **Why it's lower priority**: Often happens because requirements change frequently (Tier 1 #2)\n- **When to address**: After you stabilize requirements\n- **Quick fix**: Document only decisions and key processes, not implementation details (implementation changes; decisions don't)\n\n### We Don't Celebrate Wins Enough\n- **Cultural issue, not process issue**\n- **Low-lift fix**: 5 min at end of each retro to call out one thing the team did well\n- **Will improve morale** while you tackle the structural issues\n\n---\n\n## Implementation Roadmap (Next 2 Sprints)\n\n### Week 1-2: Foundation (Do These First)\n1. **Create RACI matrix** (4 hours team effort)\n   - Who: Product manager + tech leads + one engineer from each team\n   - Outcome: One-pager with 10 common task types and clear owners\n   - Use in sprint planning immediately\n\n2. **Establish requirement freeze rule** (1 hour decision)\n   - Document when mid-sprint changes are allowed (P0 bugs only)\n   - Create triage process for \"feature requests during sprint\"\n   - Add to sprint retrospective: \"Did we maintain requirement freeze?\"\n\n### Week 3-4: Quality (Build Foundation)\n3. **Test coverage initiative** (ongoing)\n   - Review: target 70% for critical paths, not 100%\n   - Add: \"Tests included\" to PR review checklist\n   - Measure: track coverage trend (not absolute number first)\n\n4. **Retro on the improvements** (4 hours)\n   - Ask: What's improved?\n   - Ask: What's still broken?\n   - Iterate\n\n---\n\n## Why This Works (The 80/20 Logic)\n\n**Unclear ownership** \u2192 Blocks decisions, creates debates, slows reviews, breaks communication\n**Requirement instability** \u2192 Makes planning impossible, forces rework, blocks testing, burns out the team\n**Low test coverage** \u2192 Creates fear of refactoring, slows reviews, enables technical debt\n\nThese three are **load-bearing walls** in your team's process. Fix these and the other 9 issues lose 80% of their fuel.\n\n---\n\n## Success Metrics\n\nTrack these after implementing Tier 1 fixes:\n\n1. **Code review turnaround**: Target 24 hours (from 3-5 days)\n2. **Sprint planning duration**: Target 2 hours max (from \"forever\")\n3. **Mid-sprint requirement changes**: Track and target zero non-emergency changes\n4. **Test coverage trend**: Track month-over-month improvement toward 70% critical paths\n5. **Bug escape rate**: Fewer bugs shipped (result of higher test coverage)\n6. **Cross-team communication satisfaction**: Ask in retro \"Did ownership/communication improve?\"\n\n---\n\n## What NOT To Do\n\n\u274c Don't try to fix all 12 issues simultaneously\n\u274c Don't aim for 100% test coverage (aim for 70% on critical paths)\n\u274c Don't create an expensive RACI process\u2014one page is enough\n\u274c Don't over-document\u2014document decisions, not implementation details\n\u274c Don't eliminate process improvements\u2014just prioritize the leverage points\n\n---\n\n## Final Thought\n\nYour team isn't failing at 12 things. You're likely struggling with 3 systemic issues that cascade into 12 visible problems. The frustration of \"we've tried before but kept getting stuck\" suggests you've been addressing symptoms rather than root causes.\n\nStart with the RACI matrix and requirement freeze rule (together: ~5 hours of team effort). These unlock everything else. Then layer in test coverage focus. In 4 weeks, you should see measurable improvement on sprint planning, code review speed, communication, and shipping quality.\n\nGood luck with the next retro!\n"}]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

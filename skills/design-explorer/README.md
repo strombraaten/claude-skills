@@ -1,0 +1,64 @@
+# design-explorer
+
+Generate multiple distinct UI design directions and compare them side-by-side in an interactive gallery — instead of reacting to one mockup at a time.
+
+## How it works
+
+1. **Context gathering** — Claude reads your codebase (colors, fonts, data shapes) and asks what screen you're designing
+2. **Mockup generation** — produces 6–8 fully self-contained HTML mockups, each representing a different design philosophy (editorial, dark/premium, card-based, data-dense, etc.)
+3. **Gallery viewer** — opens an interactive browser gallery where you can browse designs, vote 👍/👎, and add notes
+4. **Feedback synthesis** — click "Summarize Feedback", paste the result back into Claude, and iterate
+
+## Gallery UI
+
+![Direction 1 — compact list](docs/direction-1.png)
+![Direction 2 — bar-centered](docs/direction-2.png)
+![Direction 3 — card grid](docs/direction-3.png)
+![Direction 4 — dark premium](docs/direction-4.png)
+![Direction 5 — editorial](docs/direction-5.png)
+![Direction 6 — spreadsheet view](docs/direction-6.png)
+![Final synthesis direction](docs/direction-r4.png)
+
+**Keyboard shortcuts in the gallery:**
+- `←` / `→` — navigate between designs
+- `U` — vote up
+- `D` — vote down
+- `Esc` — close summary modal
+
+## Installation
+
+```sh
+cp -r skills/design-explorer ~/.claude/skills/
+```
+
+Or from the repo root:
+
+```sh
+ln -s "$PWD/skills/design-explorer" ~/.claude/skills/design-explorer
+```
+
+## Usage
+
+Just describe what you want to design:
+
+```
+/design-explorer
+```
+
+Claude will ask a few questions, read your codebase, and generate the mockups. Works best when pointed at a real project — it uses actual colors, fonts, and data field names instead of Lorem ipsum.
+
+## Requirements
+
+- **Claude Preview MCP** — needed for the gallery viewer (`preview_start`). Without it, mockups are still generated and saved to `_design-exploration/` in your project root; you can open them manually in a browser.
+
+## Files generated
+
+Claude writes all output to `_design-exploration/` in your project root:
+
+```
+_design-exploration/
+├── _gallery.html     ← entry point for the gallery viewer
+├── design-1.html
+├── design-2.html
+└── ...
+```

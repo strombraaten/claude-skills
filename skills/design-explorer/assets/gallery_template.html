@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Explorer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0d0f; color: #e8e8e8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #16161a; border-bottom: 1px solid #2a2a30; flex-shrink: 0; gap: 12px; }
+  #design-label { font-size: 15px; font-weight: 600; color: #fff; min-width: 200px; }
+  #progress-dots { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #3a3a44; background: #1e1e24; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #666; transition: all 0.15s; }
+  .dot:hover { border-color: #6060ff; color: #aaa; }
+  .dot.active { border-color: #6060ff; color: #fff; background: #2a2a40; }
+  .dot.up { background: #1a3a1a; border-color: #3a9a3a; color: #5fdf5f; }
+  .dot.down { background: #3a1a1a; border-color: #9a3a3a; color: #df5f5f; }
+  #nav-controls { display: flex; gap: 8px; align-items: center; }
+  .nav-btn { background: #222228; border: 1px solid #3a3a44; color: #ccc; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.15s; }
+  .nav-btn:hover { background: #2e2e38; color: #fff; border-color: #5555aa; }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  #counter { font-size: 13px; color: #666; min-width: 50px; text-align: center; }
+  #preview-container { flex: 1; position: relative; overflow: hidden; }
+  #preview-frame { width: 100%; height: 100%; border: none; background: #fff; transition: opacity 0.2s; }
+  #preview-frame.loading { opacity: 0; }
+  #bottombar { display: flex; align-items: stretch; padding: 10px 16px; background: #16161a; border-top: 1px solid #2a2a30; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+  #vote-section { display: flex; gap: 8px; align-items: center; }
+  .vote-btn { border: none; border-radius: 8px; cursor: pointer; font-size: 22px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: #222228; border: 2px solid #3a3a44; }
+  .vote-btn:hover { transform: scale(1.1); }
+  #btn-up.active { background: #1a3a1a; border-color: #3a9a3a; }
+  #btn-down.active { background: #3a1a1a; border-color: #9a3a3a; }
+  #note-input { flex: 1; background: #222228; border: 1px solid #3a3a44; border-radius: 8px; color: #e8e8e8; padding: 8px 12px; font-size: 13px; resize: none; min-height: 44px; max-height: 80px; font-family: inherit; line-height: 1.5; transition: border-color 0.15s; }
+  #note-input:focus { outline: none; border-color: #5555aa; }
+  #note-input::placeholder { color: #555; }
+  #summarize-btn { background: #3a2a6a; border: 1px solid #6040cc; color: #c8b8ff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; transition: all 0.15s; align-self: flex-end; }
+  #summarize-btn:hover { background: #4a3a8a; color: #fff; }
+  #summary-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 24px; }
+  #summary-modal.open { display: flex; }
+  #summary-box { background: #1a1a22; border: 1px solid #3a3a50; border-radius: 12px; width: 100%; max-width: 680px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+  #summary-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #2a2a38; }
+  #summary-header h2 { font-size: 16px; color: #e0d8ff; }
+  #close-summary { background: none; border: none; color: #888; cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; }
+  #close-summary:hover { color: #fff; }
+  #summary-content { padding: 20px; overflow-y: auto; flex: 1; }
+  #summary-text { background: #12121a; border: 1px solid #2a2a38; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.7; color: #c8c8e8; white-space: pre-wrap; font-family: 'Menlo', 'Monaco', monospace; user-select: all; }
+  #copy-btn { margin-top: 12px; background: #2a2a40; border: 1px solid #4040aa; color: #a0a0ff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+  #copy-btn:hover { background: #3a3a55; }
+  #copy-btn.copied { color: #5fdf5f; border-color: #3a9a3a; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div id="design-label">Direction 1</div>
+  <div id="progress-dots"></div>
+  <div id="nav-controls">
+    <button class="nav-btn" id="btn-prev">← Prev</button>
+    <span id="counter">1 / 6</span>
+    <button class="nav-btn" id="btn-next">Next →</button>
+  </div>
+</div>
+<div id="preview-container">
+  <iframe id="preview-frame" title="Design preview"></iframe>
+</div>
+<div id="bottombar">
+  <div id="vote-section">
+    <button class="vote-btn" id="btn-up" title="Like (U)">👍</button>
+    <button class="vote-btn" id="btn-down" title="Dislike (D)">👎</button>
+  </div>
+  <textarea id="note-input" placeholder="Add a note about this design..."></textarea>
+  <button id="summarize-btn">✨ Summarize Feedback</button>
+</div>
+<div id="summary-modal">
+  <div id="summary-box">
+    <div id="summary-header">
+      <h2>Feedback Summary — ready to paste into Claude</h2>
+      <button id="close-summary">×</button>
+    </div>
+    <div id="summary-content">
+      <div id="summary-text"></div>
+      <button id="copy-btn">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+<script>
+  const DESIGNS = __DESIGNS_JSON__;
+  const STORAGE_KEY = 'design-explorer-' + DESIGNS.map(d => d.file).join(',').split('').reduce((a, c) => Math.imul(31, a) + c.charCodeAt(0) | 0, 0);
+  let currentIndex = 0;
+  let feedback = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  DESIGNS.forEach((d, i) => { if (!feedback[i]) feedback[i] = { vote: null, note: '' }; });
+  const frame = document.getElementById('preview-frame');
+  const label = document.getElementById('design-label');
+  const counter = document.getElementById('counter');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnUp = document.getElementById('btn-up');
+  const btnDown = document.getElementById('btn-down');
+  const noteInput = document.getElementById('note-input');
+  const dotsContainer = document.getElementById('progress-dots');
+  const summarizeBtn = document.getElementById('summarize-btn');
+  const modal = document.getElementById('summary-modal');
+  const summaryText = document.getElementById('summary-text');
+  const closeBtn = document.getElementById('close-summary');
+  const copyBtn = document.getElementById('copy-btn');
+  function saveFeedback() { localStorage.setItem(STORAGE_KEY, JSON.stringify(feedback)); }
+  function renderDots() {
+    dotsContainer.innerHTML = '';
+    DESIGNS.forEach((d, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === currentIndex ? ' active' : '') + (feedback[i]?.vote === 'up' ? ' up' : '') + (feedback[i]?.vote === 'down' ? ' down' : '');
+      dot.textContent = i + 1;
+      dot.title = d.name;
+      dot.addEventListener('click', () => goTo(i));
+      dotsContainer.appendChild(dot);
+    });
+  }
+  function goTo(index) {
+    feedback[currentIndex].note = noteInput.value;
+    saveFeedback();
+    currentIndex = index;
+    const design = DESIGNS[index];
+    frame.classList.add('loading');
+    frame.src = design.file;
+    frame.onload = () => frame.classList.remove('loading');
+    label.textContent = design.name;
+    counter.textContent = (index + 1) + ' / ' + DESIGNS.length;
+    btnPrev.disabled = index === 0;
+    btnNext.disabled = index === DESIGNS.length - 1;
+    const v = feedback[index].vote;
+    btnUp.classList.toggle('active', v === 'up');
+    btnDown.classList.toggle('active', v === 'down');
+    noteInput.value = feedback[index].note || '';
+    renderDots();
+  }
+  function vote(direction) {
+    feedback[currentIndex].vote = feedback[currentIndex].vote === direction ? null : direction;
+    btnUp.classList.toggle('active', feedback[currentIndex].vote === 'up');
+    btnDown.classList.toggle('active', feedback[currentIndex].vote === 'down');
+    saveFeedback();
+    renderDots();
+  }
+  function buildSummary() {
+    feedback[currentIndex].note = noteInput.value;
+    saveFeedback();
+    const liked = [], disliked = [], neutral = [];
+    DESIGNS.forEach((d, i) => {
+      const entry = { name: d.name, index: i + 1, note: feedback[i].note };
+      if (feedback[i].vote === 'up') liked.push(entry);
+      else if (feedback[i].vote === 'down') disliked.push(entry);
+      else neutral.push(entry);
+    });
+    let s = '## Design Exploration Feedback\n\n';
+    if (liked.length) { s += '### Directions I liked (' + liked.length + ')\n'; liked.forEach(e => { s += '- **Direction ' + e.index + ': ' + e.name + '**'; if (e.note) s += ' — "' + e.note + '"'; s += '\n'; }); s += '\n'; }
+    if (disliked.length) { s += '### Directions I didn\'t like (' + disliked.length + ')\n'; disliked.forEach(e => { s += '- **Direction ' + e.index + ': ' + e.name + '**'; if (e.note) s += ' — "' + e.note + '"'; s += '\n'; }); s += '\n'; }
+    if (neutral.length) { s += '### Not voted (' + neutral.length + ')\n'; neutral.forEach(e => { s += '- Direction ' + e.index + ': ' + e.name; if (e.note) s += ' — "' + e.note + '"'; s += '\n'; }); s += '\n'; }
+    s += '---\n*Use this to synthesize a refined design direction.*';
+    return s;
+  }
+  btnPrev.addEventListener('click', () => currentIndex > 0 && goTo(currentIndex - 1));
+  btnNext.addEventListener('click', () => currentIndex < DESIGNS.length - 1 && goTo(currentIndex + 1));
+  btnUp.addEventListener('click', () => vote('up'));
+  btnDown.addEventListener('click', () => vote('down'));
+  noteInput.addEventListener('input', () => { feedback[currentIndex].note = noteInput.value; saveFeedback(); });
+  summarizeBtn.addEventListener('click', () => { summaryText.textContent = buildSummary(); modal.classList.add('open'); copyBtn.textContent = 'Copy to clipboard'; copyBtn.classList.remove('copied'); });
+  closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(summaryText.textContent).then(() => { copyBtn.textContent = 'Copied!'; copyBtn.classList.add('copied'); }); });
+  document.addEventListener('keydown', e => {
+    if (e.target === noteInput) return;
+    if (e.key === 'ArrowLeft' && currentIndex > 0) goTo(currentIndex - 1);
+    if (e.key === 'ArrowRight' && currentIndex < DESIGNS.length - 1) goTo(currentIndex + 1);
+    if (e.key === 'u' || e.key === 'U') vote('up');
+    if (e.key === 'd' || e.key === 'D') vote('down');
+    if (e.key === 'Escape') modal.classList.remove('open');
+  });
+  goTo(0);
+</script>
+</body>
+</html>
